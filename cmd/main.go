@@ -5,31 +5,41 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/TS22082/dat_board_server/api/auth"
 	"github.com/TS22082/dat_board_server/api/test"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"github.com/TS22082/dat_board_server/db"
+	"go.mongodb.org/mongo-driver/bson"
 )
+
+type Response struct {
+	Message string `json:"message"`
+}
 
 func main() {
 
-	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017/dat_board")
+	client := db.Connect()
 
-	client, err := mongo.Connect(context.Background(), clientOptions)
+	collectionToGet := client.Database("dat_board").Collection("test")
 
-	if err != nil {
-		fmt.Printf("Failed to connect to MongoDB: %v", err)
-	}
+	itemsInTestCollection, err := collectionToGet.Find(context.Background(), bson.D{})
 
-	err = client.Ping(context.Background(), nil)
+	var results []bson.M
 
 	if err != nil {
-		fmt.Printf("Failed to ping MongoDB: %v", err)
+		fmt.Printf("Failed to get items from test collection: %v", err)
 	}
 
-	fmt.Println("Connected to MongoDB!")
+	if err = itemsInTestCollection.All(context.Background(), &results); err != nil {
+		fmt.Printf("Failed to decode items from test collection: %v", err)
+	}
 
+	// Test routes
 	http.HandleFunc("/", test.HelloHandler)
 	http.HandleFunc("/2", test.HelloHandler2)
+
+	// Auth routes
+	http.HandleFunc("/github/redirect", auth.RedirectGithub)
+	http.HandleFunc("/github/login", auth.LoginGithub)
 
 	err = http.ListenAndServe(":8080", nil)
 
