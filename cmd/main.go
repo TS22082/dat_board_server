@@ -8,6 +8,8 @@ import (
 	"github.com/TS22082/dat_board_server/api/auth"
 	"github.com/TS22082/dat_board_server/api/test"
 	"github.com/TS22082/dat_board_server/db"
+	"github.com/TS22082/dat_board_server/scripts/middleware"
+
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -34,12 +36,12 @@ func main() {
 	}
 
 	// Test routes
-	http.HandleFunc("/", test.HelloHandler)
-	http.HandleFunc("/2", test.HelloHandler2)
+	http.Handle("/api", middleware.CorsMiddleware(http.HandlerFunc(test.HelloHandler)))
+	http.HandleFunc("/api/2", test.HelloHandler2)
 
 	// Auth routes
-	http.HandleFunc("/github/redirect", auth.RedirectGithub)
-	http.HandleFunc("/github/login", auth.LoginGithub)
+	http.HandleFunc("/api/github/login", auth.LoginGithub)
+	http.HandleFunc("/api/github/redirect", auth.RedirectGithub)
 
 	err = http.ListenAndServe(":8080", nil)
 
