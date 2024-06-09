@@ -24,7 +24,7 @@ func HandleGhLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	code := r.URL.Query().Get("code")
-	if code == "" {
+	if code == "" || code == "null" {
 		http.Error(w, "Code parameter is missing or empty", http.StatusBadRequest)
 		return
 	}
@@ -54,10 +54,7 @@ func HandleGhLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := struct {
-		StatusCode int                    `json:"status_code"`
-		Body       map[string]interface{} `json:"body"`
-	}{
+	response := GithubResponse{
 		StatusCode: statusCode,
 		Body:       result,
 	}
