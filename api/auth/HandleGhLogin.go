@@ -10,7 +10,7 @@ import (
 	utils "github.com/TS22082/dat_board_server/scripts/utilities"
 )
 
-type GithubResponse struct {
+type Response struct {
 	StatusCode int                    `json:"status_code"`
 	Body       map[string]interface{} `json:"body"`
 }
@@ -54,7 +54,7 @@ func HandleGhLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := GithubResponse{
+	response := Response{
 		StatusCode: statusCode,
 		Body:       result,
 	}

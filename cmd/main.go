@@ -8,7 +8,6 @@ import (
 	"github.com/TS22082/dat_board_server/api/auth"
 	"github.com/TS22082/dat_board_server/api/test"
 	"github.com/TS22082/dat_board_server/db"
-	"github.com/TS22082/dat_board_server/scripts/middleware"
 
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
@@ -42,7 +41,7 @@ func main() {
 	}
 
 	// Test routes
-	http.Handle("/api", middleware.CorsMiddleware(http.HandlerFunc(test.HelloHandler)))
+	http.HandleFunc("/api", test.HelloHandler)
 	http.HandleFunc("/api/2", test.HelloHandler2)
 
 	// Auth routes
