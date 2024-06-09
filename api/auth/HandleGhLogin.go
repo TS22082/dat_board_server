@@ -10,6 +10,11 @@ import (
 	"github.com/TS22082/dat_board_server/scripts/middleware"
 )
 
+type GithubResponse struct {
+	StatusCode int                    `json:"status_code"`
+	Body       map[string]interface{} `json:"body"`
+}
+
 func HandleGhLogin(w http.ResponseWriter, r *http.Request) {
 	middleware.EnableCors(&w)
 
@@ -25,11 +30,6 @@ func HandleGhLogin(w http.ResponseWriter, r *http.Request) {
 	if code == "" {
 		http.Error(w, "Code parameter is empty", http.StatusBadRequest)
 		return
-	}
-
-	var response struct {
-		StatusCode int                    `json:"status_code"`
-		Body       map[string]interface{} `json:"body"`
 	}
 
 	url := "https://github.com/login/oauth/access_token"
@@ -77,8 +77,10 @@ func HandleGhLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.StatusCode = resp.StatusCode
-	response.Body = result
+	response := GithubResponse{
+		StatusCode: resp.StatusCode,
+		Body:       result,
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
