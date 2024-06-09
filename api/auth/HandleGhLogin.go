@@ -30,7 +30,7 @@ func HandleGhLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	url := "https://github.com/login/oauth/access_token"
-	payload := map[string]string{
+	ghAuthPayload := map[string]string{
 		"client_id":     os.Getenv("GITHUB_CLIENT_ID"),
 		"client_secret": os.Getenv("GITHUB_CLIENT_SECRET"),
 		"code":          code,
@@ -41,14 +41,14 @@ func HandleGhLogin(w http.ResponseWriter, r *http.Request) {
 		"Content-Type": "application/json",
 	}
 
-	params := utils.HTTPRequestParams{
+	ghAuthParams := utils.HTTPRequestParams{
 		URL:     url,
 		Method:  "POST",
 		Headers: headers,
-		Body:    payload,
+		Body:    ghAuthPayload,
 	}
 
-	result, statusCode, err := utils.MakeHTTPRequest(params)
+	ghAuthResults, statusCode, err := utils.MakeHTTPRequest(ghAuthParams)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to get access token: %v", err), http.StatusInternalServerError)
 		return
@@ -56,8 +56,25 @@ func HandleGhLogin(w http.ResponseWriter, r *http.Request) {
 
 	response := Response{
 		StatusCode: statusCode,
-		Body:       result,
+		Body:       ghAuthResults,
 	}
+
+	ghUserParams := utils.HTTPRequestParams{
+		URL:    "https://api.github.com/user",
+		Method: "GET",
+		Headers: map[string]string{
+			"Authorization": fmt.Sprintf("token %v", ghAuthResults["access_token"]),
+		},
+	}
+
+	ghUserResults, _, err := utils.MakeHTTPRequest(ghUserParams)
+
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to get user data: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	response.Body["user"] = ghUserResults
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
