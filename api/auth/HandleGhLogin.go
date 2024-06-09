@@ -10,21 +10,8 @@ import (
 	"github.com/TS22082/dat_board_server/scripts/middleware"
 )
 
-type GithubResponse struct {
-	StatusCode int                    `json:"status_code"`
-	Body       map[string]interface{} `json:"body"`
-}
-
 func HandleGhLogin(w http.ResponseWriter, r *http.Request) {
-
-	println("Handling GitHub login")
-
 	middleware.EnableCors(&w)
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
 
 	hasCodeParam := r.URL.Query().Has("code")
 
@@ -41,10 +28,8 @@ func HandleGhLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var response struct {
-		Code         string          `json:"code"`
-		Response     *GithubResponse `json:"response"`
-		AccessToken  string          `json:"access_token"`
-		RefreshToken string          `json:"refresh_token"`
+		StatusCode int                    `json:"status_code"`
+		Body       map[string]interface{} `json:"body"`
 	}
 
 	url := "https://github.com/login/oauth/access_token"
@@ -92,13 +77,8 @@ func HandleGhLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.Code = code
-	response.Response = &GithubResponse{
-		StatusCode: resp.StatusCode,
-		Body:       result,
-	}
-	// response.AccessToken = result["access_token"].(string)
-	// response.RefreshToken = result["refresh_token"].(string)
+	response.StatusCode = resp.StatusCode
+	response.Body = result
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
