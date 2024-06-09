@@ -1,13 +1,13 @@
 package auth
 
 import (
-	"bytes"
 	"encoding/json"
-	"io"
+	"fmt"
 	"net/http"
 	"os"
 
 	"github.com/TS22082/dat_board_server/scripts/middleware"
+	utils "github.com/TS22082/dat_board_server/scripts/utilities"
 )
 
 type GithubResponse struct {
@@ -18,17 +18,14 @@ type GithubResponse struct {
 func HandleGhLogin(w http.ResponseWriter, r *http.Request) {
 	middleware.EnableCors(&w)
 
-	hasCodeParam := r.URL.Query().Has("code")
-
-	if !hasCodeParam {
-		http.Error(w, "No code parameter in query string", http.StatusBadRequest)
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
 		return
 	}
 
 	code := r.URL.Query().Get("code")
-
 	if code == "" {
-		http.Error(w, "Code parameter is empty", http.StatusBadRequest)
+		http.Error(w, "Code parameter is missing or empty", http.StatusBadRequest)
 		return
 	}
 
@@ -39,46 +36,29 @@ func HandleGhLogin(w http.ResponseWriter, r *http.Request) {
 		"code":          code,
 	}
 
-	payloadBytes, err := json.Marshal(payload)
+	headers := map[string]string{
+		"Accept":       "application/json",
+		"Content-Type": "application/json",
+	}
+
+	params := utils.HTTPRequestParams{
+		URL:     url,
+		Method:  "POST",
+		Headers: headers,
+		Body:    payload,
+	}
+
+	result, statusCode, err := utils.MakeHTTPRequest(params)
 	if err != nil {
-		http.Error(w, "Failed to marshal payload", http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Failed to get access token: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	body := bytes.NewReader(payloadBytes)
-
-	req, err := http.NewRequest("POST", url, body)
-	if err != nil {
-		http.Error(w, "Failed to create request to GitHub", http.StatusInternalServerError)
-		return
-	}
-
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		http.Error(w, "Failed to get access token from GitHub", http.StatusInternalServerError)
-		return
-	}
-	defer resp.Body.Close()
-
-	var result map[string]interface{}
-	bodyBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		http.Error(w, "Failed to read response body", http.StatusInternalServerError)
-		return
-	}
-
-	err = json.Unmarshal(bodyBytes, &result)
-	if err != nil {
-		http.Error(w, "Failed to unmarshal response body", http.StatusInternalServerError)
-		return
-	}
-
-	response := GithubResponse{
-		StatusCode: resp.StatusCode,
+	response := struct {
+		StatusCode int                    `json:"status_code"`
+		Body       map[string]interface{} `json:"body"`
+	}{
+		StatusCode: statusCode,
 		Body:       result,
 	}
 
