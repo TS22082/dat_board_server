@@ -10,6 +10,7 @@ import (
 	"github.com/TS22082/dat_board_server/db"
 	"github.com/TS22082/dat_board_server/scripts/middleware"
 
+	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -18,6 +19,11 @@ type Response struct {
 }
 
 func main() {
+	err := godotenv.Load()
+
+	if err != nil {
+		fmt.Printf("Failed to load .env file: %v", err)
+	}
 
 	client := db.Connect()
 
@@ -40,8 +46,7 @@ func main() {
 	http.HandleFunc("/api/2", test.HelloHandler2)
 
 	// Auth routes
-	http.HandleFunc("/api/github/login", auth.LoginGithub)
-	http.HandleFunc("/api/github/redirect", auth.RedirectGithub)
+	http.HandleFunc("/api/github/gh_login", auth.HandleGhLogin)
 
 	err = http.ListenAndServe(":8080", nil)
 
