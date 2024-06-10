@@ -8,6 +8,7 @@ import (
 
 	"github.com/TS22082/dat_board_server/scripts/middleware"
 	utils "github.com/TS22082/dat_board_server/scripts/utilities"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type Response struct {
@@ -15,7 +16,7 @@ type Response struct {
 	Body       map[string]interface{} `json:"body"`
 }
 
-func HandleGhLogin(w http.ResponseWriter, r *http.Request) {
+func HandleGhLogin(w http.ResponseWriter, r *http.Request, client *mongo.Client) {
 	middleware.EnableCors(&w)
 
 	if r.Method == "OPTIONS" {
@@ -72,6 +73,17 @@ func HandleGhLogin(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("Failed to get user emails: %v", err), http.StatusInternalServerError)
 		return
 	}
+
+	primaryEmail := string("")
+
+	for _, email := range emails {
+		if email["primary"] == true {
+			primaryEmail = email["email"].(string)
+			break
+		}
+	}
+
+	fmt.Printf("Primary Email ==> %v\n", primaryEmail)
 
 	response.Body["emails"] = emails
 

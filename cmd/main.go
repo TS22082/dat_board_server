@@ -11,10 +11,17 @@ import (
 
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type Response struct {
 	Message string `json:"message"`
+}
+
+func passDbToClient(handler func(http.ResponseWriter, *http.Request, *mongo.Client), client *mongo.Client) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		handler(w, r, client)
+	}
 }
 
 func main() {
@@ -45,7 +52,7 @@ func main() {
 	http.HandleFunc("/api/2", test.HelloHandler2)
 
 	// Auth routes
-	http.HandleFunc("/api/github/gh_login", auth.HandleGhLogin)
+	http.HandleFunc("/api/github/gh_login", passDbToClient(auth.HandleGhLogin, client))
 
 	err = http.ListenAndServe(":8080", nil)
 
