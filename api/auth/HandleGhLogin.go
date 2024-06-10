@@ -12,8 +12,8 @@ import (
 )
 
 type Response struct {
-	StatusCode int                    `json:"status_code"`
-	Body       map[string]interface{} `json:"body"`
+	AccessToken  string `json:"access_token"`
+	PrimaryEmail string `json:"primary_email"`
 }
 
 func HandleGhLogin(w http.ResponseWriter, r *http.Request, client *mongo.Client) {
@@ -55,9 +55,9 @@ func HandleGhLogin(w http.ResponseWriter, r *http.Request, client *mongo.Client)
 		return
 	}
 
-	response := Response{
-		StatusCode: statusCode,
-		Body:       ghAuthResults,
+	if statusCode != http.StatusOK {
+		http.Error(w, fmt.Sprintf("Failed to get access token: %v", ghAuthResults), http.StatusInternalServerError)
+		return
 	}
 
 	if ghAuthResults["access_token"] == nil {
@@ -65,25 +65,17 @@ func HandleGhLogin(w http.ResponseWriter, r *http.Request, client *mongo.Client)
 		return
 	}
 
-	emails, err := utils.GetUserEmails(ghAuthResults["access_token"].(string))
+	email, err := utils.GetUserEmail(ghAuthResults["access_token"].(string))
 
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to get user emails: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	primaryEmail := string("")
-
-	for _, email := range emails {
-		if email["primary"] == true {
-			primaryEmail = email["email"].(string)
-			break
-		}
+	response := Response{
+		AccessToken:  ghAuthResults["access_token"].(string),
+		PrimaryEmail: email,
 	}
-
-	fmt.Printf("Primary Email ==> %v\n", primaryEmail)
-
-	response.Body["emails"] = emails
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)

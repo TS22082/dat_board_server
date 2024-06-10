@@ -8,21 +8,11 @@ import (
 	"github.com/TS22082/dat_board_server/api/auth"
 	"github.com/TS22082/dat_board_server/api/test"
 	"github.com/TS22082/dat_board_server/db"
+	utils "github.com/TS22082/dat_board_server/scripts/utilities"
 
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 )
-
-type Response struct {
-	Message string `json:"message"`
-}
-
-func passDbToClient(handler func(http.ResponseWriter, *http.Request, *mongo.Client), client *mongo.Client) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		handler(w, r, client)
-	}
-}
 
 func main() {
 	err := godotenv.Load()
@@ -47,12 +37,10 @@ func main() {
 		fmt.Printf("Failed to decode items from test collection: %v", err)
 	}
 
-	// Test routes
 	http.HandleFunc("/api", test.HelloHandler)
 	http.HandleFunc("/api/2", test.HelloHandler2)
 
-	// Auth routes
-	http.HandleFunc("/api/github/gh_login", passDbToClient(auth.HandleGhLogin, client))
+	http.HandleFunc("/api/github/gh_login", utils.PassDbToClient(auth.HandleGhLogin, client))
 
 	err = http.ListenAndServe(":8080", nil)
 

@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-func GetUserEmails(accessToken string) ([]map[string]interface{}, error) {
+func GetUserEmail(accessToken string) (string, error) {
 	var bodyBytes []byte
 
 	getUserParams := map[string]interface{}{
@@ -23,7 +23,7 @@ func GetUserEmails(accessToken string) ([]map[string]interface{}, error) {
 	req, err := http.NewRequest(getUserParams["Method"].(string), getUserParams["URL"].(string), nil)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to make request: %v", err)
+		return "", fmt.Errorf("failed to make request: %v", err)
 	}
 
 	for key, value := range getUserParams["Headers"].(map[string]string) {
@@ -35,7 +35,7 @@ func GetUserEmails(accessToken string) ([]map[string]interface{}, error) {
 	resp, err := client.Do(req)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to make request: %v", err)
+		return "", fmt.Errorf("failed to make request: %v", err)
 	}
 
 	defer resp.Body.Close()
@@ -43,7 +43,7 @@ func GetUserEmails(accessToken string) ([]map[string]interface{}, error) {
 	bodyBytes, err = io.ReadAll(resp.Body)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %v", err)
+		return "", fmt.Errorf("failed to read response body: %v", err)
 	}
 
 	var emails []map[string]interface{}
@@ -51,8 +51,17 @@ func GetUserEmails(accessToken string) ([]map[string]interface{}, error) {
 	err = json.Unmarshal(bodyBytes, &emails)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user emails: %v", err)
+		return "", fmt.Errorf("failed to get user emails: %v", err)
 	}
 
-	return emails, nil
+	primaryEmail := string("")
+
+	for _, email := range emails {
+		if email["primary"] == true {
+			primaryEmail = email["email"].(string)
+			break
+		}
+	}
+
+	return primaryEmail, nil
 }
