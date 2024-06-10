@@ -60,8 +60,6 @@ func HandleGhLogin(w http.ResponseWriter, r *http.Request, client *mongo.Client)
 		Body:       ghAuthResults,
 	}
 
-	fmt.Printf("Auth ==> %v\n", ghAuthResults["access_token"])
-
 	if ghAuthResults["access_token"] == nil {
 		http.Error(w, fmt.Sprintf("Failed to get access token: %v", ghAuthResults), http.StatusInternalServerError)
 		return
@@ -86,11 +84,6 @@ func HandleGhLogin(w http.ResponseWriter, r *http.Request, client *mongo.Client)
 	fmt.Printf("Primary Email ==> %v\n", primaryEmail)
 
 	response.Body["emails"] = emails
-
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to get user emails: %v", err), http.StatusInternalServerError)
-		return
-	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
