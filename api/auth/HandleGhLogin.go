@@ -59,22 +59,26 @@ func HandleGhLogin(w http.ResponseWriter, r *http.Request) {
 		Body:       ghAuthResults,
 	}
 
-	ghUserParams := utils.HTTPRequestParams{
-		URL:    "https://api.github.com/user",
-		Method: "GET",
-		Headers: map[string]string{
-			"Authorization": fmt.Sprintf("token %v", ghAuthResults["access_token"]),
-		},
-	}
+	fmt.Printf("Auth ==> %v\n", ghAuthResults["access_token"])
 
-	ghUserResults, _, err := utils.MakeHTTPRequest(ghUserParams)
-
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to get user data: %v", err), http.StatusInternalServerError)
+	if ghAuthResults["access_token"] == nil {
+		http.Error(w, fmt.Sprintf("Failed to get access token: %v", ghAuthResults), http.StatusInternalServerError)
 		return
 	}
 
-	response.Body["user"] = ghUserResults
+	emails, err := utils.GetUserEmails(ghAuthResults["access_token"].(string))
+
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to get user emails: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	response.Body["emails"] = emails
+
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to get user emails: %v", err), http.StatusInternalServerError)
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
