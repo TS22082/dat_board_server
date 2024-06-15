@@ -14,6 +14,7 @@ import (
 type Response struct {
 	AccessToken  string `json:"access_token"`
 	PrimaryEmail string `json:"primary_email"`
+	Error        bool   `json:"error"`
 }
 
 func HandleGhLogin(w http.ResponseWriter, r *http.Request, client *mongo.Client) {
@@ -72,9 +73,65 @@ func HandleGhLogin(w http.ResponseWriter, r *http.Request, client *mongo.Client)
 		return
 	}
 
+	userCollection := client.Database("dat_board").Collection("Users")
+	userFound, err := utils.FindUserByEmail(userCollection, email)
+
+	if err == mongo.ErrNoDocuments {
+		newUser, err := utils.CreateUserWithEmail(userCollection, email)
+
+		if err != nil {
+			message := map[string]interface{}{
+				"error":   true,
+				"message": err.Error(),
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(message)
+		}
+
+		message := map[string]interface{}{
+			"error":     false,
+			"message":   "User created successfully",
+			"newUser":   newUser,
+			"authToken": ghAuthResults["access_token"].(string),
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(message)
+		return
+	}
+
+	if err != nil {
+		message := map[string]interface{}{
+			"error":   true,
+			"message": err.Error(),
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(message)
+		return
+	}
+
+	type userModel struct {
+		Email string `bson:"email"`
+		ID    string `bson:"_id"`
+	}
+
+	var user userModel
+
+	err = userFound.Decode(&user)
+
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to decode user: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Printf("{\n  Email: %s\n  ID: %s\n}", user.Email, user.ID)
+
 	response := Response{
 		AccessToken:  ghAuthResults["access_token"].(string),
 		PrimaryEmail: email,
+		Error:        false,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
