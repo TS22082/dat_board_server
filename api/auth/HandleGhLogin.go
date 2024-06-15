@@ -2,11 +2,13 @@ package auth
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 
 	"github.com/TS22082/dat_board_server/scripts/middleware"
 	utils "github.com/TS22082/dat_board_server/scripts/utilities"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -100,10 +102,25 @@ func HandleGhLogin(w http.ResponseWriter, r *http.Request, client *mongo.Client)
 			json.NewEncoder(w).Encode(message)
 		}
 
+		jwt_token, err := utils.CreateJWT(email, newUser["_id"].(primitive.ObjectID).Hex())
+
+		fmt.Println("jwt_token: ", jwt_token)
+
+		if err != nil {
+			message := map[string]interface{}{
+				"error": true,
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(message)
+		}
+
+		fmt.Println("happened here: ", newUser)
+
 		response := Response{
-			AccessToken:  ghAuthResults["access_token"].(string),
+			AccessToken:  jwt_token,
 			PrimaryEmail: email,
-			ID:           newUser["_id"].(string),
+			ID:           newUser["_id"].(primitive.ObjectID).Hex(),
 			Error:        false,
 		}
 
@@ -143,8 +160,20 @@ func HandleGhLogin(w http.ResponseWriter, r *http.Request, client *mongo.Client)
 		return
 	}
 
+	jwt_token, err := utils.CreateJWT(email, user.ID)
+
+	if err != nil {
+		message := map[string]interface{}{
+			"error":   true,
+			"message": err.Error(),
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(message)
+	}
+
 	response := Response{
-		AccessToken:  ghAuthResults["access_token"].(string),
+		AccessToken:  jwt_token,
 		PrimaryEmail: email,
 		ID:           user.ID,
 		Error:        false,

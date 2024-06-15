@@ -3,6 +3,7 @@ module github.com/TS22082/dat_board_server
 go 1.22.3
 
 require (
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/joho/godotenv v1.5.1
 	go.mongodb.org/mongo-driver v1.15.0
 )
