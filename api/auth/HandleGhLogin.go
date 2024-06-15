@@ -2,7 +2,6 @@ package auth
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"os"
 
@@ -14,6 +13,7 @@ import (
 type Response struct {
 	AccessToken  string `json:"access_token"`
 	PrimaryEmail string `json:"primary_email"`
+	ID           string `json:"id"`
 	Error        bool   `json:"error"`
 }
 
@@ -51,25 +51,36 @@ func HandleGhLogin(w http.ResponseWriter, r *http.Request, client *mongo.Client)
 	}
 
 	ghAuthResults, statusCode, err := utils.MakeHTTPRequest(ghAuthParams)
+
+	access_err_message := map[string]interface{}{
+		"error":   true,
+		"message": "Failed to get access token",
+	}
+
+	email_err_message := map[string]interface{}{
+		"error":   true,
+		"message": "Failed to get user email from token",
+	}
+
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to get access token: %v", err), http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(access_err_message)
 		return
 	}
 
 	if statusCode != http.StatusOK {
-		http.Error(w, fmt.Sprintf("Failed to get access token: %v", ghAuthResults), http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(access_err_message)
 		return
 	}
 
 	if ghAuthResults["access_token"] == nil {
-		http.Error(w, fmt.Sprintf("Failed to get access token: %v", ghAuthResults), http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(access_err_message)
 		return
 	}
 
 	email, err := utils.GetUserEmail(ghAuthResults["access_token"].(string))
 
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to get user emails: %v", err), http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(email_err_message)
 		return
 	}
 
@@ -89,15 +100,15 @@ func HandleGhLogin(w http.ResponseWriter, r *http.Request, client *mongo.Client)
 			json.NewEncoder(w).Encode(message)
 		}
 
-		message := map[string]interface{}{
-			"error":     false,
-			"message":   "User created successfully",
-			"newUser":   newUser,
-			"authToken": ghAuthResults["access_token"].(string),
+		response := Response{
+			AccessToken:  ghAuthResults["access_token"].(string),
+			PrimaryEmail: email,
+			ID:           newUser["_id"].(string),
+			Error:        false,
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(message)
+		json.NewEncoder(w).Encode(response)
 		return
 	}
 
@@ -122,15 +133,20 @@ func HandleGhLogin(w http.ResponseWriter, r *http.Request, client *mongo.Client)
 	err = userFound.Decode(&user)
 
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to decode user: %v", err), http.StatusInternalServerError)
+		message := map[string]interface{}{
+			"error":   true,
+			"message": err.Error(),
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(message)
 		return
 	}
-
-	fmt.Printf("{\n  Email: %s\n  ID: %s\n}", user.Email, user.ID)
 
 	response := Response{
 		AccessToken:  ghAuthResults["access_token"].(string),
 		PrimaryEmail: email,
+		ID:           user.ID,
 		Error:        false,
 	}
 
