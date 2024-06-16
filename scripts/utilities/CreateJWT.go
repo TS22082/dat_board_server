@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"fmt"
+	"os"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -9,16 +9,13 @@ import (
 
 func CreateJWT(email string, id string) (string, error) {
 
-	fmt.Printf("email: %s\n", email)
-	fmt.Printf("id: %s\n", id)
-
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"email": email,
 		"id":    id,
 		"exp":   time.Now().Add(time.Hour * 24).Unix(),
 	})
 
-	tokenString, err := token.SignedString([]byte("super_secret_key"))
+	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
 
 	if err != nil {
 		return "", err
