@@ -19,7 +19,7 @@ var TokenInvalidError = map[string]interface{}{
 	"message": "Token is invalid",
 }
 
-func VerifyJWT(w http.ResponseWriter, r *http.Request, client *mongo.Client) {
+func VerifyJWTHandler(w http.ResponseWriter, r *http.Request, client *mongo.Client) {
 	middleware.EnableCors(&w)
 
 	if r.Method == "OPTIONS" {

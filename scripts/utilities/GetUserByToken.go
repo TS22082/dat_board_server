@@ -2,14 +2,15 @@ package utils
 
 import (
 	"os"
-	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func VerifyJWT(token string) (bool, error) {
-
+func GetUserByToken(dbCollection *mongo.Collection, token string) (map[string]interface{}, error) {
 	// remove the "Bearer " prefix from the token
+	var err error
+
 	token = token[7:]
 
 	decriptedToken, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
@@ -17,24 +18,21 @@ func VerifyJWT(token string) (bool, error) {
 	})
 
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
 	claims, ok := decriptedToken.Claims.(jwt.MapClaims)
 
 	if !ok || !decriptedToken.Valid {
-		return false, nil
+		return nil, nil
 	}
 
-	exp := claims["exp"]
-
-	if int64(exp.(float64)) < time.Now().Unix() {
-		return false, nil
+	formattedToken := map[string]interface{}{
+		"email": claims["email"],
+		"id":    claims["id"],
+		"exp":   claims["exp"],
 	}
 
-	if decriptedToken.Valid {
-		return true, nil
-	}
+	return formattedToken, nil
 
-	return false, nil
 }
