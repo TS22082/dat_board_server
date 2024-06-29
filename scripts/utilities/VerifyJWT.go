@@ -9,10 +9,6 @@ import (
 )
 
 func VerifyJWT(token string) (bool, error) {
-
-	// remove the "Bearer " prefix from the token
-	// token = token[7:]
-
 	decriptedToken, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 		return []byte(os.Getenv("JWT_SECRET")), nil
 	})
