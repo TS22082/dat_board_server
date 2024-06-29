@@ -33,9 +33,9 @@ func main() {
 	}()
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /api/github/gh_login", utils.PassDbToClient(auth.HandleGhLogin, dbClient))
-	mux.HandleFunc("GET /api/verify_jwt", utils.PassDbToClient(auth.VerifyJWTHandler, dbClient))
-	mux.HandleFunc("GET /api/user", utils.PassDbToClient(user.GetUserByTokenHandler, dbClient))
+	mux.HandleFunc("GET /api/github/gh_login", utils.PassDbTohandler(auth.HandleGhLogin, dbClient))
+	mux.HandleFunc("GET /api/verify_jwt", utils.PassDbTohandler(auth.VerifyJWTHandler, dbClient))
+	mux.HandleFunc("GET /api/user", utils.PassDbTohandler(user.GetUserByTokenHandler, dbClient))
 
 	server := &http.Server{
 		Addr:    ":8080",

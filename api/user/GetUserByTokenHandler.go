@@ -61,7 +61,7 @@ func GetUserByTokenHandler(w http.ResponseWriter, r *http.Request, client *mongo
 
 	response := map[string]interface{}{
 		"error": false,
-		"uesr":  user,
+		"user":  user,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
