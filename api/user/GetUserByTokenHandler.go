@@ -2,7 +2,6 @@ package user
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/TS22082/dat_board_server/scripts/middleware"
@@ -54,8 +53,6 @@ func GetUserByTokenHandler(w http.ResponseWriter, r *http.Request, client *mongo
 		})
 		return
 	}
-
-	fmt.Println("User: ", user)
 
 	if r.Method == "OPTIONS" {
 		w.WriteHeader(http.StatusOK)
