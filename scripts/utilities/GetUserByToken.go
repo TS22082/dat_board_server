@@ -34,5 +34,4 @@ func GetUserByToken(dbCollection *mongo.Collection, token string) (map[string]in
 	}
 
 	return formattedToken, nil
-
 }
