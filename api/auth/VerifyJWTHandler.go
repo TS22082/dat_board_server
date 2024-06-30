@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/TS22082/dat_board_server/scripts/middleware"
 	utils "github.com/TS22082/dat_board_server/scripts/utilities"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -20,8 +19,6 @@ var TokenInvalidError = map[string]interface{}{
 }
 
 func VerifyJWTHandler(w http.ResponseWriter, r *http.Request, client *mongo.Client) {
-	middleware.EnableCors(&w)
-
 	if r.Method == "OPTIONS" {
 		w.WriteHeader(http.StatusOK)
 	}

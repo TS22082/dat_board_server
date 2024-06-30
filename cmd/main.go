@@ -12,6 +12,7 @@ import (
 	"github.com/TS22082/dat_board_server/api/auth"
 	"github.com/TS22082/dat_board_server/api/user"
 	"github.com/TS22082/dat_board_server/db"
+	"github.com/TS22082/dat_board_server/scripts/middleware"
 	utils "github.com/TS22082/dat_board_server/scripts/utilities"
 
 	"github.com/joho/godotenv"
@@ -32,14 +33,24 @@ func main() {
 		}
 	}()
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /api/github/gh_login", utils.PassDbTohandler(auth.HandleGhLogin, dbClient))
-	mux.HandleFunc("GET /api/verify_jwt", utils.PassDbTohandler(auth.VerifyJWTHandler, dbClient))
-	mux.HandleFunc("GET /api/user", utils.PassDbTohandler(user.GetUserByTokenHandler, dbClient))
+	router := http.NewServeMux()
+	protectedRouter := http.NewServeMux()
+
+	router.HandleFunc("GET /api/github/gh_login", utils.PassDbTohandler(auth.HandleGhLogin, dbClient))
+	router.HandleFunc("GET /api/verify_jwt", utils.PassDbTohandler(auth.VerifyJWTHandler, dbClient))
+
+	protectedRouter.HandleFunc("GET /api/user", utils.PassDbTohandler(user.GetUserByTokenHandler, dbClient))
+
+	router.Handle("/", middleware.EnsureAuth(protectedRouter, dbClient))
+
+	stack := middleware.CreateStack(
+		middleware.Logging,
+		middleware.CorsRules,
+	)
 
 	server := &http.Server{
 		Addr:    ":8080",
-		Handler: mux,
+		Handler: stack(router),
 	}
 
 	serverErrors := make(chan error, 1)

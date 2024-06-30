@@ -8,10 +8,8 @@ import (
 )
 
 func GetUserByToken(dbCollection *mongo.Collection, token string) (map[string]interface{}, error) {
-	// remove the "Bearer " prefix from the token
-	var err error
 
-	token = token[7:]
+	var err error
 
 	decriptedToken, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 		return []byte(os.Getenv("JWT_SECRET")), nil

@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/TS22082/dat_board_server/scripts/middleware"
 	utils "github.com/TS22082/dat_board_server/scripts/utilities"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -20,7 +19,6 @@ type Response struct {
 }
 
 func HandleGhLogin(w http.ResponseWriter, r *http.Request, client *mongo.Client) {
-	middleware.EnableCors(&w)
 
 	if r.Method == "OPTIONS" {
 		w.WriteHeader(http.StatusOK)
